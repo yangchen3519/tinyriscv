@@ -3,8 +3,10 @@
 # - AX7035开发板用户手册REV1.1.pdf
 # - 黑金AX7035开发板原理图.pdf
 # Strategy:
-# - Use board-native resources where they exist: clock, reset, UART, LEDs, SD, keys.
-# - Use documented expansion header pins for ports not natively present on the board.
+# - Keep all top-level ports constrained to avoid Vivado unconstrained-IO DRC issues.
+# - Use board-native resources where they exist: clock, reset, UART, LEDs, SD.
+# - Move optional/debug ports to documented expansion-header pins.
+# - Add default pull-downs on currently-unused input-only ports to avoid floating inputs.
 # Notes:
 # - gpio[1:0] and jtag_* are mapped to J9 expansion header pins.
 # - spi_* is mapped to the onboard MicroSD socket in SPI mode.
@@ -30,8 +32,13 @@ set_property IOSTANDARD LVCMOS33 [get_ports halted_ind]
 set_property PACKAGE_PIN D20 [get_ports halted_ind]
 
 # UART / debug
-# uart_debug_pin is tied to KEY1 on this board.
-# KEY1 is active low, so the signal is high when released.
+# Keep UART pins aligned with the TA-provided final constraints:
+# uart_tx_pin -> G16
+# uart_rx_pin -> G15
+# uart_debug_pin -> M13
+# On AX7035, M13 is KEY1 and keys are active low:
+# - released: logic 1, uart_debug enabled
+# - pressed:  logic 0, uart_debug disabled
 set_property IOSTANDARD LVCMOS33 [get_ports uart_debug_pin]
 set_property PACKAGE_PIN M13 [get_ports uart_debug_pin]
 
@@ -50,17 +57,22 @@ set_property IOSTANDARD LVCMOS33 [get_ports {gpio[1]}]
 set_property PACKAGE_PIN E16 [get_ports {gpio[1]}]
 
 # JTAG
-# Mapped to J9 expansion header pins 5/6/7/8 for external debug hookup.
+# jtag_TCK must use a clock-capable pin because jtag_driver samples on TCK
+# and Vivado routes it through BUFG.
+# Use J9 pin 30 -> D17 (IO_L12P_T1_MRCC_16).
 set_property IOSTANDARD LVCMOS33 [get_ports jtag_TCK]
-set_property PACKAGE_PIN F14 [get_ports jtag_TCK]
+set_property PACKAGE_PIN D17 [get_ports jtag_TCK]
+set_property PULLDOWN true [get_ports jtag_TCK]
 
 # create_clock -name jtag_clk_pin -period 300 [get_ports {jtag_TCK}]
 
 set_property IOSTANDARD LVCMOS33 [get_ports jtag_TMS]
 set_property PACKAGE_PIN F13 [get_ports jtag_TMS]
+set_property PULLDOWN true [get_ports jtag_TMS]
 
 set_property IOSTANDARD LVCMOS33 [get_ports jtag_TDI]
 set_property PACKAGE_PIN E14 [get_ports jtag_TDI]
+set_property PULLDOWN true [get_ports jtag_TDI]
 
 set_property IOSTANDARD LVCMOS33 [get_ports jtag_TDO]
 set_property PACKAGE_PIN E13 [get_ports jtag_TDO]
@@ -73,6 +85,7 @@ set_property PACKAGE_PIN E13 [get_ports jtag_TDO]
 # spi_ss   -> SD_DAT3 (N13)
 set_property IOSTANDARD LVCMOS33 [get_ports spi_miso]
 set_property PACKAGE_PIN P16 [get_ports spi_miso]
+set_property PULLUP true [get_ports spi_miso]
 
 set_property IOSTANDARD LVCMOS33 [get_ports spi_mosi]
 set_property PACKAGE_PIN P15 [get_ports spi_mosi]
