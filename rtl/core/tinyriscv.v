@@ -24,6 +24,7 @@ module tinyriscv(
 
     output wire[`MemAddrBus] rib_ex_addr_o,    // 读、写外设的地址
     input wire[`MemBus] rib_ex_data_i,         // 从外设读取的数据
+    input wire rib_ex_ack_i,                   // 外设访问完成应答
     output wire[`MemBus] rib_ex_data_o,        // 写入外设的数据
     output wire rib_ex_req_o,                  // 访问外设请求
     output wire rib_ex_we_o,                   // 写外设标志
@@ -296,6 +297,7 @@ module tinyriscv(
         .op1_jump_i(ie_op1_jump_o),
         .op2_jump_i(ie_op2_jump_o),
         .mem_rdata_i(rib_ex_data_i),
+        .mem_ack_i(rib_ex_ack_i),
         .mem_wdata_o(ex_mem_wdata_o),
         .mem_raddr_o(ex_mem_raddr_o),
         .mem_waddr_o(ex_mem_waddr_o),

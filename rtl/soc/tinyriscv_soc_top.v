@@ -78,6 +78,7 @@ module tinyriscv_soc_top(
     wire[`MemAddrBus] s0_addr_o;
     wire[`MemBus] s0_data_o;
     wire[`MemBus] s0_data_i;
+    wire s0_req_o;
     wire s0_we_o;
 
     // slave 1 interface
@@ -112,6 +113,24 @@ module tinyriscv_soc_top(
 
     // rib
     wire rib_hold_flag_o;
+
+    // bridge core <-> bridge FPGA
+    wire[7:0] bridge_core_tx_data;
+    wire bridge_core_tx_valid;
+    wire[7:0] bridge_fpga_tx_data;
+    wire bridge_fpga_tx_valid;
+    wire bridge_core_ack;
+    wire bridge_core_hold;
+
+    // bridge FPGA <-> external rom/ram
+    wire rom_we_o;
+    wire[`RomAddrBus] rom_addr_o;
+    wire[`MemBus] rom_data_o;
+    wire[`MemBus] rom_data_i;
+    wire ram_we_o;
+    wire[`RamAddrBus] ram_addr_o;
+    wire[`MemBus] ram_data_o;
+    wire[`MemBus] ram_data_i;
 
     // jtag
     wire jtag_halt_req_o;
@@ -155,6 +174,7 @@ module tinyriscv_soc_top(
         .rst(rst),
         .rib_ex_addr_o(m0_addr_i),
         .rib_ex_data_i(m0_data_o),
+        .rib_ex_ack_i(bridge_core_ack),
         .rib_ex_data_o(m0_data_i),
         .rib_ex_req_o(m0_req_i),
         .rib_ex_we_o(m0_we_i),
@@ -174,24 +194,54 @@ module tinyriscv_soc_top(
         .int_i(int_flag)
     );
 
-    // rom模块例化
-    rom u_rom(
+    bridge_core u_bridge_core(
         .clk(clk),
         .rst(rst),
+        .req_i(s0_req_o),
         .we_i(s0_we_o),
         .addr_i(s0_addr_o),
         .data_i(s0_data_o),
-        .data_o(s0_data_i)
+        .data_o(s0_data_i),
+        .ack_o(bridge_core_ack),
+        .hold_flag_o(bridge_core_hold),
+        .tx_data_o(bridge_core_tx_data),
+        .tx_valid_o(bridge_core_tx_valid),
+        .rx_data_i(bridge_fpga_tx_data)
     );
 
-    // ram模块例化
+    bridge_FPGA u_bridge_fpga(
+        .clk(clk),
+        .rst(rst),
+        .rx_valid_i(bridge_core_tx_valid),
+        .rx_data_i(bridge_core_tx_data),
+        .tx_data_o(bridge_fpga_tx_data),
+        .tx_valid_o(bridge_fpga_tx_valid),
+        .rom_we_o(rom_we_o),
+        .rom_addr_o(rom_addr_o),
+        .rom_data_o(rom_data_o),
+        .rom_data_i(rom_data_i),
+        .ram_we_o(ram_we_o),
+        .ram_addr_o(ram_addr_o),
+        .ram_data_o(ram_data_o),
+        .ram_data_i(ram_data_i)
+    );
+
+    rom u_rom(
+        .clk(clk),
+        .rst(rst),
+        .we_i(rom_we_o),
+        .addr_i(rom_addr_o),
+        .data_i(rom_data_o),
+        .data_o(rom_data_i)
+    );
+
     ram u_ram(
         .clk(clk),
         .rst(rst),
-        .we_i(s1_we_o),
-        .addr_i(s1_addr_o),
-        .data_i(s1_data_o),
-        .data_o(s1_data_i)
+        .we_i(ram_we_o),
+        .addr_i(ram_addr_o),
+        .data_i(ram_data_o),
+        .data_o(ram_data_i)
     );
 
     // // timer模块例化
@@ -284,17 +334,19 @@ module tinyriscv_soc_top(
         .m3_req_i(m3_req_i),
         .m3_we_i(m3_we_i),
 
-        // slave 0 interface
+        // // slave 0 interface rom
         .s0_addr_o(s0_addr_o),
         .s0_data_o(s0_data_o),
         .s0_data_i(s0_data_i),
+        .s0_req_o(s0_req_o),
         .s0_we_o(s0_we_o),
+        .s0_hold_i(bridge_core_hold),
 
-        // slave 1 interface
-        .s1_addr_o(s1_addr_o),
-        .s1_data_o(s1_data_o),
-        .s1_data_i(s1_data_i),
-        .s1_we_o(s1_we_o),
+        // // slave 1 interface ram
+        // .s1_addr_o(s1_addr_o),
+        // .s1_data_o(s1_data_o),
+        // .s1_data_i(s1_data_i),
+        // .s1_we_o(s1_we_o),
 
         // // slave 2 interface timer
         // .s2_addr_o(s2_addr_o),
@@ -302,7 +354,7 @@ module tinyriscv_soc_top(
         // .s2_data_i(s2_data_i),
         // .s2_we_o(s2_we_o),
 
-        // slave 3 interface
+        // slave 3 interface uart
         .s3_addr_o(s3_addr_o),
         .s3_data_o(s3_data_o),
         .s3_data_i(s3_data_i),

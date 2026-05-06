@@ -55,8 +55,8 @@ module ctrl(
             // 暂停整条流水线
             hold_flag_o = `Hold_Id;
         end else if (hold_flag_rib_i == `HoldEnable) begin
-            // 暂停PC，即取指地址不变
-            hold_flag_o = `Hold_Pc;
+            // 外部桥接访问为多周期，需暂停整条流水线
+            hold_flag_o = `Hold_Id;
         end else if (jtag_halt_flag_i == `HoldEnable) begin
             // 暂停整条流水线
             hold_flag_o = `Hold_Id;

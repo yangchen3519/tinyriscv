@@ -146,11 +146,12 @@
 `define CSR_MSTATUS 12'h300
 `define CSR_MSCRATCH 12'h340
 
-`define RomNum 4096  // rom depth(how many words)
-
-`define MemNum 4096  // memory depth(how many words)
-`define MemBus 31:0
-`define MemAddrBus 31:0
+`define RomNum 256      // ROM 深度是 256 个字
+`define RomAddrBus 7:0  // ROM 地址总线宽度是 8 位
+`define RamNum 16       // RAM 深度是 16 个字
+`define RamAddrBus 3:0  // RAM 地址总线宽度是 4 位
+`define MemBus 31:0     // 数据总线宽度是 32 位
+`define MemAddrBus 31:0 // 系统内存地址总线宽度是 32 位，桥接模块做截断
 
 `define InstBus 31:0
 `define InstAddrBus 31:0

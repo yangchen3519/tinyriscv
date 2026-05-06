@@ -16,26 +16,25 @@
 
 `include "../core/defines.v"
 
-// ram module
+// external ram: 16d x 32w
 module ram(
 
     input wire clk,
     input wire rst,
 
     input wire we_i,                   // write enable
-    input wire[`MemAddrBus] addr_i,    // addr
+    input wire[`RamAddrBus] addr_i,    // addr
     input wire[`MemBus] data_i,
 
     output reg[`MemBus] data_o         // read data
 
     );
 
-    reg[`MemBus] _ram[0:`MemNum - 1];
-
+    reg[`MemBus] _ram[0:`RamNum - 1];
 
     always @ (posedge clk) begin
         if (we_i == `WriteEnable) begin
-            _ram[addr_i[31:2]] <= data_i;
+            _ram[addr_i] <= data_i;
         end
     end
 
@@ -43,7 +42,7 @@ module ram(
         if (rst == `RstEnable) begin
             data_o = `ZeroWord;
         end else begin
-            data_o = _ram[addr_i[31:2]];
+            data_o = _ram[addr_i];
         end
     end
 

@@ -23,7 +23,7 @@ module rom(
     input wire rst,
 
     input wire we_i,                   // write enable
-    input wire[`MemAddrBus] addr_i,    // addr
+    input wire[`RomAddrBus] addr_i,    // addr
     input wire[`MemBus] data_i,
 
     output reg[`MemBus] data_o         // read data
@@ -32,10 +32,9 @@ module rom(
 
     reg[`MemBus] _rom[0:`RomNum - 1];
 
-
     always @ (posedge clk) begin
         if (we_i == `WriteEnable) begin
-            _rom[addr_i[31:2]] <= data_i;
+            _rom[addr_i] <= data_i;
         end
     end
 
@@ -43,7 +42,7 @@ module rom(
         if (rst == `RstEnable) begin
             data_o = `ZeroWord;
         end else begin
-            data_o = _rom[addr_i[31:2]];
+            data_o = _rom[addr_i];
         end
     end
 

@@ -51,17 +51,19 @@ module rib(
     input wire m3_req_i,                   // 主设备3访问请求标志
     input wire m3_we_i,                    // 主设备3写标志
 
-    // slave 0 interface
+    // slave 0 interface bridge to external rom/ram
     output reg[`MemAddrBus] s0_addr_o,     // 从设备0读、写地址
     output reg[`MemBus] s0_data_o,         // 从设备0写数据
     input wire[`MemBus] s0_data_i,         // 从设备0读取到的数据
+    output reg s0_req_o,                   // 从设备0访问请求标志
     output reg s0_we_o,                    // 从设备0写标志
+    input wire s0_hold_i,                  // 从设备0忙标志
 
-    // slave 1 interface
-    output reg[`MemAddrBus] s1_addr_o,     // 从设备1读、写地址
-    output reg[`MemBus] s1_data_o,         // 从设备1写数据
-    input wire[`MemBus] s1_data_i,         // 从设备1读取到的数据
-    output reg s1_we_o,                    // 从设备1写标志
+    // // slave 1 interface
+    // output reg[`MemAddrBus] s1_addr_o,     // 从设备1读、写地址
+    // output reg[`MemBus] s1_data_o,         // 从设备1写数据
+    // input wire[`MemBus] s1_data_i,         // 从设备1读取到的数据
+    // output reg s1_we_o,                    // 从设备1写标志
 
     // slave 2 interface
     // output reg[`MemAddrBus] s2_addr_o,     // 从设备2读、写地址
@@ -119,15 +121,19 @@ module rib(
     always @ (*) begin
         if (req[3]) begin
             grant = grant3;
-            hold_flag_o = `HoldEnable;
         end else if (req[0]) begin
             grant = grant0;
-            hold_flag_o = `HoldEnable;
         end else if (req[2]) begin
             grant = grant2;
-            hold_flag_o = `HoldEnable;
         end else begin
             grant = grant1;
+        end
+    end
+
+    always @ (*) begin
+        if (s0_hold_i == `HoldEnable) begin
+            hold_flag_o = `HoldEnable;
+        end else begin
             hold_flag_o = `HoldDisable;
         end
     end
@@ -140,19 +146,20 @@ module rib(
         m3_data_o = `ZeroWord;
 
         s0_addr_o = `ZeroWord;
-        s1_addr_o = `ZeroWord;
+        // s1_addr_o = `ZeroWord;
         // s2_addr_o = `ZeroWord;
         s3_addr_o = `ZeroWord;
         // s4_addr_o = `ZeroWord;
         // s5_addr_o = `ZeroWord;
         s0_data_o = `ZeroWord;
-        s1_data_o = `ZeroWord;
+        // s1_data_o = `ZeroWord;
         // s2_data_o = `ZeroWord;
         s3_data_o = `ZeroWord;
         // s4_data_o = `ZeroWord;
         // s5_data_o = `ZeroWord;
+        s0_req_o = `RIB_NREQ;
         s0_we_o = `WriteDisable;
-        s1_we_o = `WriteDisable;
+        // s1_we_o = `WriteDisable;
         // s2_we_o = `WriteDisable;
         s3_we_o = `WriteDisable;
         // s4_we_o = `WriteDisable;
@@ -161,17 +168,12 @@ module rib(
         case (grant)
             grant0: begin
                 case (m0_addr_i[31:28])
-                    slave_0: begin
+                    slave_0, slave_1: begin
+                        s0_req_o = m0_req_i;
                         s0_we_o = m0_we_i;
-                        s0_addr_o = {{4'h0}, {m0_addr_i[27:0]}};
+                        s0_addr_o = m0_addr_i;
                         s0_data_o = m0_data_i;
                         m0_data_o = s0_data_i;
-                    end
-                    slave_1: begin
-                        s1_we_o = m0_we_i;
-                        s1_addr_o = {{4'h0}, {m0_addr_i[27:0]}};
-                        s1_data_o = m0_data_i;
-                        m0_data_o = s1_data_i;
                     end
                     // slave_2: begin
                     //     s2_we_o = m0_we_i;
@@ -204,17 +206,12 @@ module rib(
             end
             grant1: begin
                 case (m1_addr_i[31:28])
-                    slave_0: begin
+                    slave_0, slave_1: begin
+                        s0_req_o = m1_req_i;
                         s0_we_o = m1_we_i;
-                        s0_addr_o = {{4'h0}, {m1_addr_i[27:0]}};
+                        s0_addr_o = m1_addr_i;
                         s0_data_o = m1_data_i;
                         m1_data_o = s0_data_i;
-                    end
-                    slave_1: begin
-                        s1_we_o = m1_we_i;
-                        s1_addr_o = {{4'h0}, {m1_addr_i[27:0]}};
-                        s1_data_o = m1_data_i;
-                        m1_data_o = s1_data_i;
                     end
                     // slave_2: begin
                     //     s2_we_o = m1_we_i;
@@ -247,17 +244,12 @@ module rib(
             end
             grant2: begin
                 case (m2_addr_i[31:28])
-                    slave_0: begin
+                    slave_0, slave_1: begin
+                        s0_req_o = m2_req_i;
                         s0_we_o = m2_we_i;
-                        s0_addr_o = {{4'h0}, {m2_addr_i[27:0]}};
+                        s0_addr_o = m2_addr_i;
                         s0_data_o = m2_data_i;
                         m2_data_o = s0_data_i;
-                    end
-                    slave_1: begin
-                        s1_we_o = m2_we_i;
-                        s1_addr_o = {{4'h0}, {m2_addr_i[27:0]}};
-                        s1_data_o = m2_data_i;
-                        m2_data_o = s1_data_i;
                     end
                     // slave_2: begin
                     //     s2_we_o = m2_we_i;
@@ -290,17 +282,12 @@ module rib(
             end
             grant3: begin
                 case (m3_addr_i[31:28])
-                    slave_0: begin
+                    slave_0, slave_1: begin
+                        s0_req_o = m3_req_i;
                         s0_we_o = m3_we_i;
-                        s0_addr_o = {{4'h0}, {m3_addr_i[27:0]}};
+                        s0_addr_o = m3_addr_i;
                         s0_data_o = m3_data_i;
                         m3_data_o = s0_data_i;
-                    end
-                    slave_1: begin
-                        s1_we_o = m3_we_i;
-                        s1_addr_o = {{4'h0}, {m3_addr_i[27:0]}};
-                        s1_data_o = m3_data_i;
-                        m3_data_o = s1_data_i;
                     end
                     // slave_2: begin
                     //     s2_we_o = m3_we_i;
